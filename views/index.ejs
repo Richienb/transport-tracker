@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Document</title>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css"
+		integrity="sha256-l85OmPOjvil/SOvVt3HnSSjzF1TUMyT9eV0c2BzEGzU=" crossorigin="anonymous" />
+</head>
+
+<body>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mapbox-gl/1.11.0/mapbox-gl.min.css"
+		integrity="sha256-ETq/yEgk/50QT5U21jYaBxXCgyJNasHovjc3h06k+kw=" crossorigin="anonymous" />
+	<div id="map" style="width: 100vw; height: 100vh;"></div>
+	<script type="module">
+		import ky from "https://cdn.pika.dev/ky"
+		import mapbox from "https://cdn.pika.dev/mapbox-gl"
+
+		mapbox.accessToken = "pk.eyJ1IjoicmljaGllbmIiLCJhIjoiY2theG5hcWI3MDlscjJyb2ZiN21qdzEwMyJ9.WxZxHTkqEzBX3qU9SY_C5Q"
+		const map = new mapbox.Map({
+			container: "map",
+			style: "mapbox://styles/mapbox/streets-v11",
+			center: [174.8703052, -36.8502131],
+			zoom: 10
+		})
+
+		const addImage = ({ name, url, width, height }) => {
+			if (map.hasImage(name)) {
+				return
+			}
+
+			const image = new Image(width, height)
+			image.onload = () => map.addImage(name, image)
+			image.src = url
+			image.crossOrigin = "Anonymous"
+		}
+
+		map.addControl(new mapbox.GeolocateControl())
+		addImage({
+			name: "bus-15",
+			url: "https://cdn.jsdelivr.net/npm/@mapbox/maki@6.2.0/icons/bus-15.svg",
+			width: 15,
+			height: 15
+		})
+
+		const getJson = async (url, data) => ky(url, { searchParams: data }).json()
+
+		async function getData() {
+			const buses = await getJson("/vehiclelocations")
+
+			return {
+				type: "FeatureCollection",
+				features: buses.map(({ latitude, longitude, routeId, licensePlate }) => {
+					return {
+						type: "Feature",
+						properties: {
+							icon: "bus",
+							routeId,
+							licensePlate
+						},
+						geometry: {
+							type: "Point",
+							coordinates: [longitude, latitude]
+						}
+					}
+				})
+			}
+		}
+
+		map.on("load", async () => {
+			map.addSource("buses", {
+				type: "geojson",
+				data: await getData()
+			})
+
+			setInterval(async () => {
+				map.getSource("buses").setData(await getData())
+			}, 30000)
+
+			map.addLayer({
+				id: "buses",
+				type: "symbol",
+				source: "buses",
+				layout: {
+					"icon-image": "{icon}-15",
+					"icon-allow-overlap": true
+				}
+			})
+
+			map.on("click", "buses", async event => {
+				const coordinates = [...event.features[0].geometry.coordinates]
+
+				while (Math.abs(event.lngLat.lng - coordinates[0]) > 180) {
+					coordinates[0] += event.lngLat.lng > coordinates[0] ? 360 : -360
+				}
+
+				const { routeId, licensePlate } = event.features[0].properties
+
+				let html = "Service not on a route!"
+
+				if (routeId) {
+					const { shortName, longName } = await getJson("/vehicleinfo", {
+						routeId
+					})
+
+					html = `${shortName} - ${longName}<br>License plate: ${licensePlate}`
+				}
+
+				new mapbox.Popup()
+					.setLngLat(coordinates)
+					.setHTML(html)
+					.addTo(map)
+			})
+
+			map.on("mouseenter", "buses", () => {
+				map.getCanvas().style.cursor = "pointer"
+			})
+
+			map.on("mouseleave", "buses", () => {
+				map.getCanvas().style.cursor = ""
+			})
+		})
+	</script>
+</body>
+
+</html>
