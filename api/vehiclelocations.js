@@ -7,7 +7,7 @@ const at = require("auckland-transport")
 const getData = mem(async () => {
 	const { entity } = await at("public/realtime/vehiclelocations", { key: process.env.AT_HOP_KEY })
 	return entity.map(({ vehicle }) => ({
-		routeId: dotProp.get(vehicle, "trip.route_id"),
+		routeId: dotProp.get(vehicle, "trip.route_id"), // TODO: Use optional chaining when targeting Node.js 14
 		latitude: vehicle.position.latitude,
 		longitude: vehicle.position.longitude,
 		licensePlate: vehicle.vehicle.license_plate
