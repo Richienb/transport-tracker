@@ -1,4 +1,3 @@
-import process from 'node:process';
 import type {NextApiRequest, NextApiResponse} from 'next';
 import at from 'auckland-transport';
 

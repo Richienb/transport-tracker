@@ -40,7 +40,8 @@
 			"react/jsx-closing-bracket-location": ["error", {
 				"nonEmpty": "line-aligned",
 				"selfClosing": false
-			}]
+			}],
+			"node/prefer-global/process": "off"
 		}
 	},
 	"stylelint": {
