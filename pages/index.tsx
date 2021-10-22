@@ -125,7 +125,7 @@ function VehiclePopup({
 		if (trip !== false) {
 			onPath(trip.path);
 		}
-	}, [value, trip, onPath]);
+	}, [value.tripId, trip, onPath]);
 
 	return (
 		<div style={{
