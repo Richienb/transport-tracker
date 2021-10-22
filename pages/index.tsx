@@ -206,7 +206,9 @@ export default function Home() {
 	const [path, setPath] = useState<Array<[number, number]>>([]);
 
 	if (process.env.NODE_ENV !== 'development') {
-		console.log('%chttps://github.com/Richienb/transport-tracker', 'font-size: 16px; font-weight: bold');
+		useEffect(() => {
+			console.log('%chttps://github.com/Richienb/transport-tracker', 'font-size: 16px; font-weight: bold');
+		}, []);
 	}
 
 	useEffect(() => pIntervalStoppable(async () => {
